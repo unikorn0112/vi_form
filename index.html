@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國師傅｜樂齡康養培訓報名</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        :root {
+            --primary-brown: #8B5A2B;
+            --light-brown: #D2B48C;
+            --bg-color: #FDF5E6;
+            --text-color: #5D4037;
+        }
+        body { background-color: var(--bg-color); padding: 20px; font-family: "Microsoft JhengHei", sans-serif; color: var(--text-color); }
+        .container { max-width: 500px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(139, 90, 43, 0.15); margin: auto; border: 1px solid var(--light-brown); }
+        .btn-primary { background-color: var(--primary-brown); border: none; font-weight: bold; margin-top: 25px; padding: 12px; }
+        .btn-primary:hover { background-color: #6F4E37; }
+        label { font-weight: bold; margin-top: 15px; color: var(--primary-brown); }
+        .form-control { border-color: var(--light-brown); color: var(--text-color); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3 class="text-center mb-4" style="color: var(--primary-brown);">樂齡康養培訓報名</h3>
+        <div class="form-group">
+            <label>報名姓名</label>
+            <input type="text" id="userName" class="form-control" placeholder="載入中...">
+        </div>
+        <div class="form-group">
+            <label>聯絡電話</label>
+            <input type="tel" id="userPhone" class="form-control" placeholder="請輸入電話號碼">
+        </div>
+        <div class="form-group">
+            <label>選擇班別</label>
+            <select id="classType" class="form-control" onchange="updateCourses()">
+                <option value="DIY班">DIY班 ($500 / 2小時)</option>
+                <option value="就業班">就業班 ($2980 / 8小時)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>選擇課程場次</label>
+            <select id="courseDate" class="form-control"></select>
+        </div>
+        <button id="submitBtn" class="btn btn-primary btn-block">確認報名提交</button>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        const courseData = {
+            "DIY班": [
+                "4/4 (六) 頭道頸道DIY 10:00～12:00",
+                "4/5 (日) 護目養眼DIY 10:00～12:00"
+            ],
+            "就業班": [
+                "4/4 (六) 頭道頸道就業班 13:00～16:00",
+                "4/5 (日) 護目養眼就業班 13:00～16:00"
+            ]
+        };
+
+        function updateCourses() {
+            const classType = document.getElementById('classType').value;
+            const courseSelect = document.getElementById('courseDate');
+            courseSelect.innerHTML = '';
+            courseData[classType].forEach(info => {
+                let opt = document.createElement('option');
+                opt.value = info; opt.innerHTML = info;
+                courseSelect.appendChild(opt);
+            });
+        }
+
+        async function initLIFF() {
+            try {
+                // ⚠️ 請替換為國師傅的 LIFF ID
+                await liff.init({ liffId: "請填入國師傅LIFF_ID" }); 
+                if (!liff.isLoggedIn()) { liff.login(); }
+                else {
+                    const profile = await liff.getProfile();
+                    document.getElementById('userName').value = profile.displayName;
+                    updateCourses();
+                }
+            } catch (err) { updateCourses(); }
+        }
+        initLIFF();
+
+        document.getElementById('submitBtn').onclick = async function() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const classType = document.getElementById('classType').value;
+            const selectedCourse = document.getElementById('courseDate').value;
+
+            if (!name || !phone) { alert('請填寫姓名與電話'); return; }
+            this.disabled = true;
+
+            try {
+                // ⚠️ 請替換為國師傅 GAS 的新部署網址
+                await fetch('https://script.google.com/macros/s/AKfycbwe2AWmgJleIyPym6raiB36jNyJKUkXjY34LrHTjnd505cC4IaiER9HqwF4Sv_SgiMF/exec', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        userId: liff.getContext().userId, 
+                        userName: name, phone: phone, 
+                        activity: selectedCourse, 
+                        price: (classType === "DIY班" ? "500" : "2980"),
+                        payMethod: "轉帳匯款"
+                    })
+                });
+                alert('報名成功\n\n感謝您的預約\n\n請點擊〔確定〕返回對話視窗');
+                liff.closeWindow();
+            } catch (e) {
+                alert('系統忙碌：' + e);
+                this.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
